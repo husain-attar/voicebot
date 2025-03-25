@@ -7,33 +7,77 @@ import time
 import requests
 import json
 from openai import OpenAI
+import sounddevice as sd
+import numpy as np
+import scipy.io.wavfile as wav
+
+
 
 # Set page configuration
 st.set_page_config(page_title="Voice Conversational Bot", page_icon="🎙️")
 
-def recognize_speech():
-    recognizer = sr.Recognizer()
+# def recognize_speech():
+#     recognizer = sr.Recognizer()
     
-    with sr.Microphone() as source:
-        st.write("Listening... Speak now.")
-        recognizer.adjust_for_ambient_noise(source)
-        try:
-            audio = recognizer.listen(source, timeout=5)
-            st.write("Processing your speech...")
+#     with sr.Microphone() as source:
+#         st.write("Listening... Speak now.")
+#         recognizer.adjust_for_ambient_noise(source)
+#         try:
+#             audio = recognizer.listen(source, timeout=5)
+#             st.write("Processing your speech...")
             
-            try:
-                text = recognizer.recognize_google(audio)
-                return text
-            except sr.UnknownValueError:
-                st.error("Sorry, I couldn't understand what you said.")
-                return None
-            except sr.RequestError:
-                st.error("Sorry, speech recognition service is unavailable.")
-                return None
+#             try:
+#                 text = recognizer.recognize_google(audio)
+#                 return text
+#             except sr.UnknownValueError:
+#                 st.error("Sorry, I couldn't understand what you said.")
+#                 return None
+#             except sr.RequestError:
+#                 st.error("Sorry, speech recognition service is unavailable.")
+#                 return None
                 
-        except sr.WaitTimeoutError:
-            st.error("No speech detected. Please try again.")
-            return None
+#         except sr.WaitTimeoutError:
+#             st.error("No speech detected. Please try again.")
+#             return None
+
+def recognize_speech():
+    # Record audio
+    st.write("Listening... Speak now.")
+    
+    # Set recording parameters
+    duration = 5  # seconds
+    sample_rate = 44100
+    
+    # Record audio
+    recording = sd.rec(int(duration * sample_rate), 
+                       samplerate=sample_rate, 
+                       channels=1,
+                       dtype='int16')
+    sd.wait()  # Wait until recording is finished
+    
+    # Save to temporary wav file
+    with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as temp_file:
+        wav.write(temp_file.name, sample_rate, recording)
+        temp_filename = temp_file.name
+    
+    # Use SpeechRecognition to transcribe the saved audio file
+    recognizer = sr.Recognizer()
+    try:
+        with sr.AudioFile(temp_filename) as source:
+            audio = recognizer.record(source)
+            text = recognizer.recognize_google(audio)
+            return text
+    except sr.UnknownValueError:
+        st.error("Sorry, I couldn't understand the audio.")
+        return None
+    except sr.RequestError:
+        st.error("Could not request results from speech recognition service.")
+        return None
+    except Exception as e:
+        st.error(f"An error occurred: {e}")
+        return None
+
+
 
 # Function to get response from OpenAI
 def get_openai_response(prompt, conversation_history, system_prompt="You are a helpful Human assistant. Respond in a casual, conversational manner as a human would."):
