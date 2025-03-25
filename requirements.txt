@@ -1,6 +1,7 @@
 streamlit
 openai 
 SpeechRecognition 
-gtts 
-pyaudio==0.2.10
+gtts
+portaudio
+pyaudio
 requests
