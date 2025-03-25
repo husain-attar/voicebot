@@ -3,3 +3,6 @@ openai
 SpeechRecognition 
 gtts
 requests
+sounddevice 
+numpy 
+scipy
