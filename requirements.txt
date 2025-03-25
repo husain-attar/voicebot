@@ -2,5 +2,5 @@ streamlit
 openai 
 SpeechRecognition 
 gtts 
-pyaudio
+pyaudio==0.2.10
 requests
